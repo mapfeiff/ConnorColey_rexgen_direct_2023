@@ -149,7 +149,7 @@ class DirectCandRanker():
 
 if __name__ == '__main__':
 
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    #sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     #print(sys.path)
 
     from rexgen_direct.core_wln_global.directcorefinder import DirectCoreFinder 
