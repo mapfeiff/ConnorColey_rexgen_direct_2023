@@ -1,7 +1,7 @@
 import tensorflow as tf
-from rexgen_direct.rank_diff_wln.nn import linearND, linear
-from rexgen_direct.rank_diff_wln.mol_graph_direct_useScores import atom_fdim as adim, bond_fdim as bdim, max_nb, smiles2graph, smiles2graph, bond_types
-from rexgen_direct.rank_diff_wln.models import *
+from nn import linearND, linear
+from mol_graph_direct_useScores import atom_fdim as adim, bond_fdim as bdim, max_nb, smiles2graph, smiles2graph, bond_types
+from models import *
 import math, sys, random
 from optparse import OptionParser
 import threading
@@ -150,7 +150,7 @@ class DirectCandRanker():
 if __name__ == '__main__':
 
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    print(sys.path)
+    #print(sys.path)
 
     from rexgen_direct.core_wln_global.directcorefinder import DirectCoreFinder 
     from rexgen_direct.scripts.eval_by_smiles import edit_mol
