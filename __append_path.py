@@ -2,5 +2,5 @@
 import sys
 sys.path.append('/usr/local/lib/python2.7/site-packages/')
 
-#Add the path to the rexgen_direct directory to the python path
-sys.path.insert(0, '/content/ConnorColey_rexgen_direct_2023')
+#Add the path to the rexgen_direct directory to the python path - !!!is not a global change
+#sys.path.append('/content/ConnorColey_rexgen_direct_2023')

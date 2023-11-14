@@ -150,6 +150,8 @@ class DirectCandRanker():
 if __name__ == '__main__':
 
     #sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    if(sys.path[-1] != "/content/ConnorColey_rexgen_direct_2023"):
+        sys.path.append("/content/ConnorColey_rexgen_direct_2023")
     #print(sys.path)
 
     from rexgen_direct.core_wln_global.directcorefinder import DirectCoreFinder 
