@@ -195,24 +195,24 @@ if __name__ == '__main__':
             directcandranker = DirectCandRanker()
             directcandranker.load_model()
             outcomes = directcandranker.predict(labelled_reactants, bond_preds, bond_scores)
-            #Sanitize reactants
-            reactants_mol = Chem.MolFromSmiles(reactants, sanitization=False)
+            #Sanitize reactants for canonicallization
+            reactants_mol = Chem.MolFromSmiles(reactants, sanitization=True)
             #Chem.SanitizeMol(reactants_mol, sanitizeOps=Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY^Chem.SANITIZE_CLEANUP^Chem.SANITIZE_CLEANUPCHIRALITY^Chem.SANITIZE_SYMMRINGS)
-            Chem.SanitizeMol(reactants_mol, sanitizeOps=Chem.SANITIZE_ALL)
+            #Chem.SanitizeMol(reactants_mol, sanitizeOps=Chem.SANITIZE_ALL)
             reactants = Chem.MolToSmiles(reactants_mol)
-            #Sanitize expected product
-            expected_product_mol = Chem.MolFromSmiles(test_dataframe["products"][i], sanitization=False)
+            #Sanitize expected product for canonicallization
+            expected_product_mol = Chem.MolFromSmiles(test_dataframe["products"][i], sanitization=True)
             #Chem.SanitizeMol(expected_product_mol, sanitizeOps=Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY^Chem.SANITIZE_CLEANUP^Chem.SANITIZE_CLEANUPCHIRALITY^Chem.SANITIZE_SYMMRINGS)
-            Chem.SanitizeMol(expected_product_mol, sanitizeOps=Chem.SANITIZE_ALL)
+            #Chem.SanitizeMol(expected_product_mol, sanitizeOps=Chem.SANITIZE_ALL)
             expected_product = Chem.MolToSmiles(expected_product_mol)
-            #Sanitize predicted product and make comparison
+            #Sanitize predicted product for canonicallization and make comparison
             correct_prediction = False
             predicted_products = ""
             for predicted_product in outcomes[0]["smiles"]:
                 #loop through each SMILES in the prediction output
-                predicted_product_mol = Chem.MolFromSmiles(predicted_product, sanitization=False)
+                predicted_product_mol = Chem.MolFromSmiles(predicted_product, sanitization=True)
                 #Chem.SanitizeMol(predicted_product_mol, sanitizeOps=Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY^Chem.SANITIZE_CLEANUP^Chem.SANITIZE_CLEANUPCHIRALITY^Chem.SANITIZE_SYMMRINGS)
-                Chem.SanitizeMol(predicted_product_mol, sanitizeOps=Chem.SANITIZE_ALL)
+                #Chem.SanitizeMol(predicted_product_mol, sanitizeOps=Chem.SANITIZE_ALL)
                 predicted_product = Chem.MolToSmiles(predicted_product_mol)
                 predicted_products += predicted_product + "."
                 #make comparison between SMILES
