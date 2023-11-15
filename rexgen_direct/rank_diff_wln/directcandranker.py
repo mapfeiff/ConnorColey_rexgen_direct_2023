@@ -156,23 +156,44 @@ if __name__ == '__main__':
 
     from rexgen_direct.core_wln_global.directcorefinder import DirectCoreFinder 
     from rexgen_direct.scripts.eval_by_smiles import edit_mol
+    import pandas as pd
 
     directcorefinder = DirectCoreFinder()
     directcorefinder.load_model()
     if len(sys.argv) < 2:
-        print('Using example reaction')
+        #print the example reactant
+        print("Using example reaction")
+        print("----------")
         react = '[CH3:26][c:27]1[cH:28][cH:29][cH:30][cH:31][cH:32]1.[Cl:18][C:19](=[O:20])[O:21][C:22]([Cl:23])([Cl:24])[Cl:25].[NH2:1][c:2]1[cH:3][cH:4][c:5]([Br:17])[c:6]2[c:10]1[O:9][C:8]([CH3:11])([C:12](=[O:13])[O:14][CH2:15][CH3:16])[CH2:7]2'
         print(react)
+        print("----------")
+        #get the score for the example reactant
+        (react, bond_preds, bond_scores, cur_att_score) = directcorefinder.predict(react)
+        directcandranker = DirectCandRanker()
+        directcandranker.load_model()
+        #get the predictions for the products
+        outcomes = directcandranker.predict(react, bond_preds, bond_scores)
+        #print the ranked products
+        for outcome in outcomes:
+            print(outcome)
+
+    #expect a path to a csv file, passed as a parameter, to test a list of reactants against expected products
     else:
-        react = str(sys.argv[1])
+        #get the data from the csv and save it as a dataframe
+        csv_path = str(sys.argv[1])
+        test_dataframe = pd.read_csv(csv_path, header=["reactants", "products"])
+        #loop through each row in the csv compare the reditions of the program
+        for i in range(len(test_dataframe)):
+            reactants = test_dataframe["reactants"][i]
+            (reactants, bond_preds, bond_scores, cur_att_score) = directcorefinder.predict(reactants)
+            directcandranker = DirectCandRanker()
+            directcandranker.load_model()
+            outcomes = directcandranker.predict(reactants, bond_preds, bond_scores)
+            print(test_dataframe["products"])
+            print(outcomes["smiles"])
+            print(outcomes["prob"])
+            break
 
-    (react, bond_preds, bond_scores, cur_att_score) = directcorefinder.predict(react)
 
-    directcandranker = DirectCandRanker()
-    directcandranker.load_model()
-    #outcomes = directcandranker.predict(react, bond_preds, bond_scores)
-    outcomes = directcandranker.predict(react, bond_preds, bond_scores)
-    for outcome in outcomes:
-        print(outcome)
 
 
