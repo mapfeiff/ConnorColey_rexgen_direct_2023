@@ -157,6 +157,7 @@ if __name__ == '__main__':
     from rexgen_direct.core_wln_global.directcorefinder import DirectCoreFinder 
     from rexgen_direct.scripts.eval_by_smiles import edit_mol
     import pandas as pd
+    from rdkit import Chem
 
     directcorefinder = DirectCoreFinder()
     directcorefinder.load_model()
@@ -181,18 +182,52 @@ if __name__ == '__main__':
     else:
         #get the data from the csv and save it as a dataframe
         csv_path = str(sys.argv[1])
-        test_dataframe = pd.read_csv(csv_path, header=["reactants", "products"])
+        test_dataframe = pd.read_csv(csv_path, names=["reactants", "products"])
+        #Create a csv to add to
+        csv_output = open("output_test.csv", 'w')
+        csv_output.write("Reactants,Expected_Products,Predicted_Products,Comparison,Model_Probability,\n")
         #loop through each row in the csv compare the reditions of the program
         for i in range(len(test_dataframe)):
+            #for each reactants in the row
             reactants = test_dataframe["reactants"][i]
-            (reactants, bond_preds, bond_scores, cur_att_score) = directcorefinder.predict(reactants)
+            #get the predictions for those reactants
+            (labelled_reactants, bond_preds, bond_scores, cur_att_score) = directcorefinder.predict(reactants)
             directcandranker = DirectCandRanker()
             directcandranker.load_model()
-            outcomes = directcandranker.predict(reactants, bond_preds, bond_scores)
-            print(test_dataframe["products"])
-            print(outcomes["smiles"])
-            print(outcomes["prob"])
-            break
+            outcomes = directcandranker.predict(labelled_reactants, bond_preds, bond_scores)
+            #Sanitize reactants
+            reactants_mol = Chem.MolFromSmiles(reactants, sanitization=False)
+            #Chem.SanitizeMol(reactants_mol, sanitizeOps=Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY^Chem.SANITIZE_CLEANUP^Chem.SANITIZE_CLEANUPCHIRALITY^Chem.SANITIZE_SYMMRINGS)
+            Chem.SanitizeMol(reactants_mol, sanitizeOps=Chem.SANITIZE_ALL)
+            reactants = Chem.MolToSmiles(reactants_mol)
+            #Sanitize expected product
+            expected_product_mol = Chem.MolFromSmiles(test_dataframe["products"][i], sanitization=False)
+            #Chem.SanitizeMol(expected_product_mol, sanitizeOps=Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY^Chem.SANITIZE_CLEANUP^Chem.SANITIZE_CLEANUPCHIRALITY^Chem.SANITIZE_SYMMRINGS)
+            Chem.SanitizeMol(expected_product_mol, sanitizeOps=Chem.SANITIZE_ALL)
+            expected_product = Chem.MolToSmiles(expected_product_mol)
+            #Sanitize predicted product and make comparison
+            correct_prediction = False
+            predicted_products = ""
+            for predicted_product in outcomes[0]["smiles"]:
+                #loop through each SMILES in the prediction output
+                predicted_product_mol = Chem.MolFromSmiles(predicted_product, sanitization=False)
+                #Chem.SanitizeMol(predicted_product_mol, sanitizeOps=Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY^Chem.SANITIZE_CLEANUP^Chem.SANITIZE_CLEANUPCHIRALITY^Chem.SANITIZE_SYMMRINGS)
+                Chem.SanitizeMol(predicted_product_mol, sanitizeOps=Chem.SANITIZE_ALL)
+                predicted_product = Chem.MolToSmiles(predicted_product_mol)
+                predicted_products += predicted_product + "."
+                #make comparison between SMILES
+                if(predicted_product == expected_product):
+                    correct_prediction = True
+            #remove period at end of smiles
+            predicted_products = predicted_products[0:len(predicted_products)-1]
+            #Write the data to a csv
+            prediction_probability = outcomes[0]["prob"]
+            row = "{},{},{},{},{},\n".format(reactants, expected_product, predicted_products, correct_prediction, prediction_probability)
+            csv_output.write(row)
+            #break at 10
+            if(i > 10):
+                break
+        csv_output.close()
 
 
 
