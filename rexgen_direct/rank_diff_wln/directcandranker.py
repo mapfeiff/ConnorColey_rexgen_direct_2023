@@ -166,6 +166,9 @@ if __name__ == '__main__':
         print("Using example reaction")
         print("----------")
         react = '[CH3:26][c:27]1[cH:28][cH:29][cH:30][cH:31][cH:32]1.[Cl:18][C:19](=[O:20])[O:21][C:22]([Cl:23])([Cl:24])[Cl:25].[NH2:1][c:2]1[cH:3][cH:4][c:5]([Br:17])[c:6]2[c:10]1[O:9][C:8]([CH3:11])([C:12](=[O:13])[O:14][CH2:15][CH3:16])[CH2:7]2'
+        react = "CCOC(=O)C1=CC=C[C@@H](NC(=O)OC(C)(C)C)C1"
+        react = Chem.RemoveStereochemistry(react)
+        react = Chem.CanonSmiles(react)
         print(react)
         print("----------")
         #get the score for the example reactant
@@ -188,55 +191,64 @@ if __name__ == '__main__':
         csv_output.write("Reactants,Expected_Products,Predicted_Products,Rank,Comparison,Model_Probability,\n")
         #loop through each row in the csv compare the reditions of the program
         for i in range(len(test_dataframe)):
-            #for each reactants in the row
-            reactants = test_dataframe["reactants"][i]
-            #get the predictions for those reactants
-            (labelled_reactants, bond_preds, bond_scores, cur_att_score) = directcorefinder.predict(reactants)
-            directcandranker = DirectCandRanker()
-            directcandranker.load_model()
-            outcomes = directcandranker.predict(labelled_reactants, bond_preds, bond_scores)
-            #Sanitize reactants for canonicallization
-            reactants = Chem.CanonSmiles(reactants)
-            
-            #Sanitize expected product for canonicallization
-            expected_product = Chem.CanonSmiles(test_dataframe["products"][i])
-            
-            #make comparison between expected and predicted product
-            correct_prediction = False
-            for j in range(len(outcomes)):
-                predicted_products = ""
-                #iterate through each smiles string in the predicted list (checking for match to the expected product)
-                for predicted_product in outcomes[j]["smiles"]:
-                    #loop through each SMILES in the prediction output
-                    #<assume that the smiles output by the prediction software are canonicalized>
-                    #predicted_product = Chem.CanonSmiles(predicted_product)
-                    predicted_products += predicted_product + "."
-                    #make comparison between expected and predicted SMILES
-                    if(predicted_product == expected_product):
-                        correct_prediction = True
-                #remove period at end of smiles
-                predicted_products = predicted_products[0:len(predicted_products)-1]
-                #save the predicted probability of the row
-                prediction_probability = outcomes[j]["prob"]
-                #save the rank of the prediction
-                rank = outcomes[j]["rank"]
-                #Write the data to a csv for rank 1 and correct product
-                if(rank==1):
-                    csv_output = open("output_test.csv", 'a')
-                    row = "{},{},{},{},{},{},\n".format(reactants, expected_product, predicted_products, rank, correct_prediction, prediction_probability)
-                    csv_output.write(row)
-                    csv_output.close()
-                if(correct_prediction):
-                    csv_output = open("output_test.csv", 'a')
-                    row = "{},{},{},{},{},{},\n".format(reactants, expected_product, predicted_products, rank, correct_prediction, prediction_probability)
-                    csv_output.write(row)
-                    csv_output.close()
-                    #break out of the loop for the current reactant if a correct prediction detected
-                    break
-                #when about the finish the final loop, then we know that the correct prediction has not been found
-                if(j == len(outcomes)-1):
-                    csv_output = open("output_test.csv", 'a')
-                    row = "{},{},NONE_FOUND,{}_PREDICTIONS_CHECKED,NONE_FOUND,NONE_FOUND,\n".format(reactants, expected_product, len(outcomes))
-                    csv_output.write(row)
-                    csv_output.close()
-                    
+            try:
+                #for each reactants in the row
+                reactants = test_dataframe["reactants"][i]
+                #get the predictions for those reactants
+                (labelled_reactants, bond_preds, bond_scores, cur_att_score) = directcorefinder.predict(reactants)
+                directcandranker = DirectCandRanker()
+                directcandranker.load_model()
+                outcomes = directcandranker.predict(labelled_reactants, bond_preds, bond_scores)
+                #Sanitize reactants for canonicallization
+                reactants = Chem.CanonSmiles(reactants)
+                
+                #Sanitize expected product for canonicallization
+                expected_product = Chem.CanonSmiles(test_dataframe["products"][i])
+                expected_product = Chem.RemoveStereochemistry(expected_product)
+                
+                #make comparison between expected and predicted product
+                correct_prediction = False
+                for j in range(len(outcomes)):
+                    predicted_products = ""
+                    #iterate through each smiles string in the predicted list (checking for match to the expected product)
+                    for predicted_product in outcomes[j]["smiles"]:
+                        #loop through each SMILES in the prediction output
+                        #<assume that the smiles output by the prediction software are canonicalized>
+                        #predicted_product = Chem.CanonSmiles(predicted_product)
+                        predicted_products += predicted_product + "."
+                        #make comparison between expected and predicted SMILES
+                        if(predicted_product == expected_product):
+                            correct_prediction = True
+                    #remove period at end of smiles
+                    predicted_products = predicted_products[0:len(predicted_products)-1]
+                    #save the predicted probability of the row
+                    prediction_probability = outcomes[j]["prob"]
+                    #save the rank of the prediction
+                    rank = outcomes[j]["rank"]
+                    #Write the data to a csv for rank 1 and correct product
+                    if(rank==1):
+                        csv_output = open("output_test.csv", 'a')
+                        row = "{},{},{},{},{},{},\n".format(reactants, expected_product, predicted_products, rank, correct_prediction, prediction_probability)
+                        csv_output.write(row)
+                        csv_output.close()
+                    if(correct_prediction):
+                        csv_output = open("output_test.csv", 'a')
+                        row = "{},{},{},{},{},{},\n".format(reactants, expected_product, predicted_products, rank, correct_prediction, prediction_probability)
+                        csv_output.write(row)
+                        csv_output.close()
+                        #break out of the loop for the current reactant if a correct prediction detected
+                        break
+                    #when about the finish the final loop, then we know that the correct prediction has not been found
+                    if(j == len(outcomes)-1):
+                        csv_output = open("output_test.csv", 'a')
+                        row = "{},{},NONE_FOUND,{}_PREDICTIONS_CHECKED,NONE_FOUND,NONE_FOUND,\n".format(reactants, expected_product, len(outcomes))
+                        csv_output.write(row)
+                        csv_output.close()
+            except:
+                #skip the test if there is something wrong with gathering the smiles
+                reactants = test_dataframe["reactants"][i]
+                csv_output = open("output_test.csv", 'a')
+                row = "{},ERROR,ERROR,ERROR,ERROR,ERROR,\n".format(reactants)
+                csv_output.write(row)
+                csv_output.close()
+
