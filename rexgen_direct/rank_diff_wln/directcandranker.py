@@ -26,6 +26,13 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum(axis=0)
 
+def stereo_remove_and_canonicalize(smiles_string):
+    mol = Chem.MolFromSmiles(smiles_string)
+    Chem.RemoveStereochemistry(mol)
+    smiles = Chem.MolToSmiles(mol)
+    smiles = Chem.CanonSmiles(smiles)
+    return(smiles)
+
 class DirectCandRanker():
     def __init__(self, hidden_size=hidden_size, depth=depth, core_size=core_size,
             MAX_NCAND=MAX_NCAND, TOPK=TOPK):
@@ -200,11 +207,10 @@ if __name__ == '__main__':
                 directcandranker.load_model()
                 outcomes = directcandranker.predict(labelled_reactants, bond_preds, bond_scores)
                 #Sanitize reactants for canonicallization
-                reactants = Chem.CanonSmiles(reactants)
+                reactants = stereo_remove_and_canonicalize(reactants)
                 
                 #Sanitize expected product for canonicallization
-                expected_product = Chem.CanonSmiles(test_dataframe["products"][i])
-                expected_product = Chem.RemoveStereochemistry(expected_product)
+                expected_product = stereo_remove_and_canonicalize(test_dataframe["products"][i])
                 
                 #make comparison between expected and predicted product
                 correct_prediction = False
@@ -213,8 +219,11 @@ if __name__ == '__main__':
                     #iterate through each smiles string in the predicted list (checking for match to the expected product)
                     for predicted_product in outcomes[j]["smiles"]:
                         #loop through each SMILES in the prediction output
-                        #<assume that the smiles output by the prediction software are canonicalized>
-                        #predicted_product = Chem.CanonSmiles(predicted_product)
+                        try:
+                            predicted_product = stereo_remove_and_canonicalize(predicted_product)
+                        except:
+                            print("{} cannot be properly parsed; skip sanitization and assume correct format".format(predicted_product))
+                        #add smiles to full list of products
                         predicted_products += predicted_product + "."
                         #make comparison between expected and predicted SMILES
                         if(predicted_product == expected_product):
