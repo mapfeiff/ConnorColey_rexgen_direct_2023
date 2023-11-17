@@ -185,7 +185,7 @@ if __name__ == '__main__':
         test_dataframe = pd.read_csv(csv_path, names=["reactants", "products"])
         #Create a csv to add to
         csv_output = open("output_test.csv", 'w')
-        csv_output.write("Reactants,Expected_Products,Predicted_Products,Comparison,Model_Probability,\n")
+        csv_output.write("Reactants,Expected_Products,Predicted_Products,Rank,Comparison,Model_Probability,\n")
         #loop through each row in the csv compare the reditions of the program
         for i in range(len(test_dataframe)):
             #for each reactants in the row
@@ -198,41 +198,52 @@ if __name__ == '__main__':
             
             #Sanitize reactants for canonicallization
             reactants = Chem.CanonSmiles(reactants)
-            #reactants_mol = Chem.MolFromSmiles(reactants)
-            #Chem.SanitizeMol(reactants_mol, sanitizeOps=Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY^Chem.SANITIZE_CLEANUP^Chem.SANITIZE_CLEANUPCHIRALITY^Chem.SANITIZE_SYMMRINGS)
-            #Chem.SanitizeMol(reactants_mol, sanitizeOps=Chem.SANITIZE_ALL)
-            #reactants = Chem.MolToSmiles(reactants_mol)
             
             #Sanitize expected product for canonicallization
             expected_product = Chem.CanonSmiles(test_dataframe["products"][i])
-            #expected_product_mol = Chem.MolFromSmiles(test_dataframe["products"][i])
-            #Chem.SanitizeMol(expected_product_mol, sanitizeOps=Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY^Chem.SANITIZE_CLEANUP^Chem.SANITIZE_CLEANUPCHIRALITY^Chem.SANITIZE_SYMMRINGS)
-            #Chem.SanitizeMol(expected_product_mol, sanitizeOps=Chem.SANITIZE_ALL)
-            #expected_product = Chem.MolToSmiles(expected_product_mol)
-            #Sanitize predicted product for canonicallization and make comparison
+            
+            #make comparison between expected and predicted product
             correct_prediction = False
-            predicted_products = ""
-            for predicted_product in outcomes[0]["smiles"]:
-                #loop through each SMILES in the prediction output
-                predicted_product = Chem.CanonSmiles(predicted_product)
-                #predicted_product_mol = Chem.MolFromSmiles(predicted_product)
-                #Chem.SanitizeMol(predicted_product_mol, sanitizeOps=Chem.SANITIZE_ALL^Chem.SANITIZE_KEKULIZE^Chem.SANITIZE_SETAROMATICITY^Chem.SANITIZE_CLEANUP^Chem.SANITIZE_CLEANUPCHIRALITY^Chem.SANITIZE_SYMMRINGS)
-                #Chem.SanitizeMol(predicted_product_mol, sanitizeOps=Chem.SANITIZE_ALL)
-                #predicted_product = Chem.MolToSmiles(predicted_product_mol)
-                predicted_products += predicted_product + "."
-                #make comparison between SMILES
-                if(predicted_product == expected_product):
-                    correct_prediction = True
-            #remove period at end of smiles
-            predicted_products = predicted_products[0:len(predicted_products)-1]
-            #Write the data to a csv
-            prediction_probability = outcomes[0]["prob"]
-            row = "{},{},{},{},{},\n".format(reactants, expected_product, predicted_products, correct_prediction, prediction_probability)
-            csv_output.write(row)
-            #break at 10
-            if(i > 10):
+            for j in range(len(outcomes)):
+                predicted_products = ""
+                #iterate through each smiles string in the predicted list (checking for match to the expected product)
+                for predicted_product in outcomes[j]["smiles"]:
+                    #loop through each SMILES in the prediction output
+                    #<assume that the smiles output by the prediction software are canonicalized>
+                    #predicted_product = Chem.CanonSmiles(predicted_product)
+                    predicted_products += predicted_product + "."
+                    #make comparison between expected and predicted SMILES
+                    if(predicted_product == expected_product):
+                        correct_prediction = True
+                #remove period at end of smiles
+                predicted_products = predicted_products[0:len(predicted_products)-1]
+                #save the predicted probability of the row
+                prediction_probability = outcomes[j]["prob"]
+                #save the rank of the prediction
+                rank = outcomes[j]["rank"]
+                #Write the data to a csv for rank 1 and correct product
+                if(rank==1):
+                    csv_output = open("output_test.csv", 'a')
+                    row = "{},{},{},{},{},{},\n".format(reactants, expected_product, predicted_products, rank, correct_prediction, prediction_probability)
+                    csv_output.write(row)
+                    csv_output.close()
+                if(correct_prediction):
+                    csv_output = open("output_test.csv", 'a')
+                    row = "{},{},{},{},{},{},\n".format(reactants, expected_product, predicted_products, rank, correct_prediction, prediction_probability)
+                    csv_output.write(row)
+                    csv_output.close()
+                    #break out of the loop for the current reactant if a correct prediction detected
+                    break
+                #when about the finish the final loop, then we know that the correct prediction has not been found
+                if(j == len(outcomes)-1):
+                    csv_output = open("output_test.csv", 'a')
+                    row = "{},{},NONE_FOUND,{}_PREDICTIONS_CHECKED,NONE_FOUND,NONE_FOUND,\n".format(reactants, expected_product, len(outcomes))
+                    csv_output.write(row)
+                    csv_output.close()
+                
+            #break at 5
+            if(i > 5):
                 break
-        csv_output.close()
 
 
 
