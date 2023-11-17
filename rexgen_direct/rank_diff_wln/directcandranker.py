@@ -195,7 +195,6 @@ if __name__ == '__main__':
             directcandranker = DirectCandRanker()
             directcandranker.load_model()
             outcomes = directcandranker.predict(labelled_reactants, bond_preds, bond_scores)
-            
             #Sanitize reactants for canonicallization
             reactants = Chem.CanonSmiles(reactants)
             
@@ -240,11 +239,4 @@ if __name__ == '__main__':
                     row = "{},{},NONE_FOUND,{}_PREDICTIONS_CHECKED,NONE_FOUND,NONE_FOUND,\n".format(reactants, expected_product, len(outcomes))
                     csv_output.write(row)
                     csv_output.close()
-                
-            #break at 5
-            if(i > 5):
-                break
-
-
-
-
+                    
