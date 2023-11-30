@@ -33,6 +33,32 @@ def stereo_remove_and_canonicalize(smiles_string):
     smiles = Chem.CanonSmiles(smiles)
     return(smiles)
 
+def are_matching_smiles(smaller_smiles, larger_smiles):
+    #split the smiles to check the number of molecule
+    smaller_smiles_list = smaller_smiles.split('.')
+    larger_smiles_list = larger_smiles.split('.')
+    #swap the parameters if the names for the smaller and larger smiles dont match (size referring to number of molecules)
+    if(len(smaller_smiles_list) > len(larger_smiles_list)):
+        return(are_matching_smiles(larger_smiles, smaller_smiles))
+    #loop through all molecules of the smaller smiles to ensure that each is present in the larger smiles
+    for small_smi in smaller_smiles_list:
+        #set condition to be set when a match for the small smiles molecule is made (False until found)
+        match_found = False
+        small_smi_canon = stereo_remove_and_canonicalize(small_smi)
+        #loop through each molecule in the larger smiles list to ensure the molecule in the smaller smiles is present within it
+        for large_smi in larger_smiles_list:
+            large_smi_canon = stereo_remove_and_canonicalize(large_smi)
+            #check when small smiles molecule equals large smiles molecule
+            if(small_smi_canon == large_smi_canon):
+                match_found = True
+                break
+        #check to ensure a match was found (if not, then there is no match -> return False)
+        if(not match_found):
+            return(False)
+    #when each small smiles molecule has completed looping without returning, then we know that each molecule in the small smiles matches a molecule in the larger smiles
+    return(True)
+
+
 class DirectCandRanker():
     def __init__(self, hidden_size=hidden_size, depth=depth, core_size=core_size,
             MAX_NCAND=MAX_NCAND, TOPK=TOPK):
@@ -197,6 +223,7 @@ if __name__ == '__main__':
         csv_output.write("Reactants,Expected_Products,Predicted_Products,Rank,Comparison,Model_Probability,\n")
         #loop through each row in the csv compare the reditions of the program
         for i in range(len(test_dataframe)):
+            print("Testing case {}/{}".format(i+1, len(test_dataframe)))
             try:
                 #for each reactants in the row
                 reactants = test_dataframe["reactants"][i]
@@ -205,6 +232,7 @@ if __name__ == '__main__':
                 directcandranker = DirectCandRanker()
                 directcandranker.load_model()
                 outcomes = directcandranker.predict(labelled_reactants, bond_preds, bond_scores)
+                
                 #Sanitize reactants for canonicallization
                 reactants = stereo_remove_and_canonicalize(reactants)
                 
@@ -221,14 +249,14 @@ if __name__ == '__main__':
                         try:
                             predicted_product = stereo_remove_and_canonicalize(predicted_product)
                         except:
-                            print("{} cannot be properly parsed; skip sanitization and assume correct format".format(predicted_product))
+                            print("\t{} cannot be properly parsed; skip sanitization and assume correct format".format(predicted_product))
                         #add smiles to full list of products
                         predicted_products += predicted_product + "."
-                        #make comparison between expected and predicted SMILES
-                        if(predicted_product == expected_product):
-                            correct_prediction = True
                     #remove period at end of smiles
                     predicted_products = predicted_products[0:len(predicted_products)-1]
+                    #make comparison between expected and predicted product SMILES
+                    if(are_matching_smiles(expected_product, predicted_products)):
+                        correct_prediction = True
                     #save the predicted probability of the row
                     prediction_probability = outcomes[j]["prob"]
                     #save the rank of the prediction
@@ -255,8 +283,10 @@ if __name__ == '__main__':
             except:
                 #skip the test if there is something wrong with gathering the smiles
                 reactants = test_dataframe["reactants"][i]
+                print("\t{} cannot be properly tested; skipping test and replacing output with ERROR".format(reactants))
                 csv_output = open("output_test.csv", 'a')
                 row = "{},ERROR,ERROR,ERROR,ERROR,ERROR,\n".format(reactants)
+                csv_output.write(row)
                 csv_output.write(row)
                 csv_output.close()
 
