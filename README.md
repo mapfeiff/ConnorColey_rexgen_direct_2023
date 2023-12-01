@@ -1,3 +1,17 @@
+# Rexgen Direct product prediction software taken from Connor Coley
+ * Slightly modified to enable ease of use on Google Colab
+ * Enabled input of CSV files (formatted by: reactants, expected products)
+
+# How to use in Google Colab environment (Working as of 1 December 2023)
+ Input the following commands into a Google Colab cell and execute it:
+ * !git clone https://github.com/mapfeiff/ConnorColey_rexgen_direct_2023.git
+ * !chmod +x ./ConnorColey_rexgen_direct_2023/install_libraries
+ * !./ConnorColey_rexgen_direct_2023/install_libraries
+ * !python ConnorColey_rexgen_direct_2023/rexgen_direct/rank_diff_wln/directcandranker.py "---enter_csv_path---.csv"
+
+---
+---
+
 # rexgen_direct
 Template-free prediction of organic reaction outcomes using graph convolutional neural networks
 
