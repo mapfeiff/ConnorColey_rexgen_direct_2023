@@ -11,6 +11,13 @@ from rdkit import Chem
 import os
 import numpy as np 
 
+print("=====Library Versions=====")
+print("python = {}".format(sys.version))
+print("numpy = {}".format(np.__version__))
+print("tensorflow = {}".format(tf.__version__))
+print("rdkit = {}".format(rdkit.__version__))
+print("==========")
+
 '''
 This module defines the DirectCandRanker class, which is for deploying the candidate ranking model
 '''
