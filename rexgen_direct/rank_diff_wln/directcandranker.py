@@ -38,7 +38,7 @@ def remove_atom_mapping_numbers(smiles_string):
     mol = Chem.MolFromSmarts(smiles_string)
     for atom in mol.GetAtoms():
         atom.SetAtomMapNum(0)
-    smiles = Chem.MolToSmiles(mol)
+    smiles = Chem.MolToSmiles(mol, canonical=False)
     return(smiles)
 
 def stereo_remove_and_canonicalize(smiles_string):
@@ -264,8 +264,9 @@ if __name__ == '__main__':
             try:
                 #for each reactants in the row
                 reactants = test_dataframe["reactants"][i]
-                #remove any atom mapping numbers to assist with the future comparison
-                reactants = remove_atom_mapping_numbers(reactants)
+                #Issues with removing atom mapping also hiding explicit H atoms
+                ####remove any atom mapping numbers to assist with the future comparison
+                ####reactants = remove_atom_mapping_numbers(reactants)
                 #enable canonicalize option
                 if(canonicalize_option):
                     reactants = canonicalize(reactants)
