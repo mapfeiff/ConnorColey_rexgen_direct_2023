@@ -283,8 +283,9 @@ if __name__ == '__main__':
                 #reactants = stereo_remove_and_canonicalize(reactants)
                 
                 #Sanitize expected product for canonicallization
+                expected_product = test_dataframe["products"][i]
                 expected_product = remove_atom_mapping_numbers(expected_product)
-                expected_product = stereo_remove_and_canonicalize(test_dataframe["products"][i])
+                expected_product = stereo_remove_and_canonicalize(expected_product)
                 
                 #make comparison between expected and predicted product
                 correct_prediction = False
