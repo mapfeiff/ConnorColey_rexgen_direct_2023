@@ -240,14 +240,15 @@ if __name__ == '__main__':
     else:
         #get the data from the csv and save it as a dataframe
         csv_path = str(sys.argv[1])
-        print(f"Using data path: {csv_path}")
+        print("Using data path: {}".format(csv_path))
         #determine whether to canonicalize or not
         canonicalize_option = None
         if(len(sys.argv) > 2 and str(sys.argv[2]).lower() == "canonicalize"):
             print("Option Enabled: canonicalize reactant SMILES")
             canonicalize_option = True
         elif(len(sys.argv) != 2):
-            print(f"unrecognized command: {str(sys.argv[2])}")
+            command = str(sys.argv[2])
+            print("Unrecognized command: {}".format(command))
             print("Existing program now")
             exit()
         else:
