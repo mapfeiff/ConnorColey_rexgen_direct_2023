@@ -33,6 +33,14 @@ def softmax(x):
     e_x = np.exp(x - np.max(x))
     return e_x / e_x.sum(axis=0)
 
+# modified from iwatobipen on GitHub: https://github.com/rdkit/rdkit/discussions/4532
+def remove_atom_mapping_numbers(smiles_string):
+    mol = Chem.MolFromSmarts(smiles_string)
+    for atom in mol.GetAtoms():
+        atom.SetAtomMapNum(0)
+    smiles = Chem.MolToSmiles(mol)
+    return(smiles)
+
 def stereo_remove_and_canonicalize(smiles_string):
     mol = Chem.MolFromSmiles(smiles_string)
     Chem.RemoveStereochemistry(mol)
@@ -55,9 +63,11 @@ def are_matching_smiles(smaller_smiles, larger_smiles):
     for small_smi in smaller_smiles_list:
         #set condition to be set when a match for the small smiles molecule is made (False until found)
         match_found = False
+        small_smi_canon = remove_atom_mapping_numbers(small_smi_canon)
         small_smi_canon = stereo_remove_and_canonicalize(small_smi)
         #loop through each molecule in the larger smiles list to ensure the molecule in the smaller smiles is present within it
         for large_smi in larger_smiles_list:
+            large_smi_canon = remove_atom_mapping_numbers(large_smi_canon)
             large_smi_canon = stereo_remove_and_canonicalize(large_smi)
             #check when small smiles molecule equals large smiles molecule
             if(small_smi_canon == large_smi_canon):
@@ -210,7 +220,9 @@ if __name__ == '__main__':
         print("Using example reaction")
         print("----------")
         react = '[CH3:26][c:27]1[cH:28][cH:29][cH:30][cH:31][cH:32]1.[Cl:18][C:19](=[O:20])[O:21][C:22]([Cl:23])([Cl:24])[Cl:25].[NH2:1][c:2]1[cH:3][cH:4][c:5]([Br:17])[c:6]2[c:10]1[O:9][C:8]([CH3:11])([C:12](=[O:13])[O:14][CH2:15][CH3:16])[CH2:7]2'
-        react = "CCOC(=O)C1=CC=C[C@@H](NC(=O)OC(C)(C)C)C1"
+        print(react)
+        react = remove_atom_mapping_numbers(react)
+        print(react)
         react = canonicalize(react)
         print(react)
         print("----------")
@@ -228,6 +240,19 @@ if __name__ == '__main__':
     else:
         #get the data from the csv and save it as a dataframe
         csv_path = str(sys.argv[1])
+        print(f"Using data path: {csv_path}")
+        #determine whether to canonicalize or not
+        canonicalize_option = None
+        if(len(sys.argv) > 2 and str(sys.argv[2]).lower() == "canonicalize"):
+            print("Option Enabled: canonicalize reactant SMILES")
+            canonicalize_option = True
+        elif(len(sys.argv) != 2):
+            print(f"unrecognized command: {str(sys.argv[2])}")
+            print("Existing program now")
+            exit()
+        else:
+            print("Default Option Enabled: raw reactant SMILES")
+            canonicalize_option = False
         test_dataframe = pd.read_csv(csv_path, names=["reactants", "products"])
         #Create a csv to add to
         csv_output = open("output_test.csv", 'w')
@@ -238,18 +263,25 @@ if __name__ == '__main__':
             try:
                 #for each reactants in the row
                 reactants = test_dataframe["reactants"][i]
-                #first canonicalize (done to match results in Connor Coley's Test Set)
-                reactants = canonicalize(reactants)
+                #remove any atom mapping numbers to assist with the future comparison
+                reactants = remove_atom_mapping_numbers(reactants)
+                #enable canonicalize option
+                if(canonicalize_option):
+                    reactants = canonicalize(reactants)
+
                 #get the predictions for those reactants
                 (labelled_reactants, bond_preds, bond_scores, cur_att_score) = directcorefinder.predict(reactants)
                 directcandranker = DirectCandRanker()
                 directcandranker.load_model()
                 outcomes = directcandranker.predict(labelled_reactants, bond_preds, bond_scores)
                 
-                #Sanitize reactants for canonicallization
-                reactants = stereo_remove_and_canonicalize(reactants)
+                #DONT DO THIS: PRINT EXACTLY WHAT WAS INPUTED
+                #remove atom mapping number and canonicalize before printing
+                #reactants = remove_atom_mapping_numbers(reactants)
+                #reactants = stereo_remove_and_canonicalize(reactants)
                 
                 #Sanitize expected product for canonicallization
+                expected_product = remove_atom_mapping_numbers(expected_product)
                 expected_product = stereo_remove_and_canonicalize(test_dataframe["products"][i])
                 
                 #make comparison between expected and predicted product
@@ -260,6 +292,7 @@ if __name__ == '__main__':
                     for predicted_product in outcomes[j]["smiles"]:
                         #loop through each SMILES in the prediction output
                         try:
+                            predicted_product = remove_atom_mapping_numbers(predicted_product)
                             predicted_product = stereo_remove_and_canonicalize(predicted_product)
                         except:
                             print("\t{} cannot be properly parsed; skip sanitization and assume correct format".format(predicted_product))
