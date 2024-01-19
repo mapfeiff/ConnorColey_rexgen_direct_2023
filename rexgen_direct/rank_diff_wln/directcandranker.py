@@ -63,12 +63,12 @@ def are_matching_smiles(smaller_smiles, larger_smiles):
     for small_smi in smaller_smiles_list:
         #set condition to be set when a match for the small smiles molecule is made (False until found)
         match_found = False
-        small_smi_canon = remove_atom_mapping_numbers(small_smi_canon)
-        small_smi_canon = stereo_remove_and_canonicalize(small_smi)
+        small_smi_canon = remove_atom_mapping_numbers(small_smi)
+        small_smi_canon = stereo_remove_and_canonicalize(small_smi_canon)
         #loop through each molecule in the larger smiles list to ensure the molecule in the smaller smiles is present within it
         for large_smi in larger_smiles_list:
-            large_smi_canon = remove_atom_mapping_numbers(large_smi_canon)
-            large_smi_canon = stereo_remove_and_canonicalize(large_smi)
+            large_smi_canon = remove_atom_mapping_numbers(large_smi)
+            large_smi_canon = stereo_remove_and_canonicalize(large_smi_canon)
             #check when small smiles molecule equals large smiles molecule
             if(small_smi_canon == large_smi_canon):
                 match_found = True
