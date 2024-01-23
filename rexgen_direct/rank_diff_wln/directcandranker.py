@@ -35,7 +35,7 @@ def softmax(x):
 
 # modified from iwatobipen on GitHub: https://github.com/rdkit/rdkit/discussions/4532
 def remove_atom_mapping_numbers(smiles_string):
-    mol = Chem.MolFromSmarts(smiles_string)
+    mol = Chem.MolFromSmiles(smiles_string, sanitize=False)
     for atom in mol.GetAtoms():
         atom.SetAtomMapNum(0)
     smiles = Chem.MolToSmiles(mol, canonical=False)
@@ -297,7 +297,8 @@ if __name__ == '__main__':
                         try:
                             predicted_product = remove_atom_mapping_numbers(predicted_product)
                             predicted_product = stereo_remove_and_canonicalize(predicted_product)
-                        except:
+                        except Exception as e:
+                            print(e)
                             print("\t{} cannot be properly parsed; skip sanitization and assume correct format".format(predicted_product))
                         #add smiles to full list of products
                         predicted_products += predicted_product + "."
@@ -329,7 +330,8 @@ if __name__ == '__main__':
                         row = "{},{},NONE_FOUND,{}_PREDICTIONS_CHECKED,NONE_FOUND,NONE_FOUND,\n".format(reactants, expected_product, len(outcomes))
                         csv_output.write(row)
                         csv_output.close()
-            except:
+            except Exception as e:
+                print(e)
                 #skip the test if there is something wrong with gathering the smiles
                 reactants = test_dataframe["reactants"][i]
                 print("\t{} cannot be properly tested; skipping test and replacing output with ERROR".format(reactants))
