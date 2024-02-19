@@ -266,7 +266,7 @@ if __name__ == '__main__':
                 reactants = test_dataframe["reactants"][i]
                 #Issues with removing atom mapping also hiding explicit H atoms
                 ####remove any atom mapping numbers to assist with the future comparison
-                reactants = remove_atom_mapping_numbers(reactants)
+                #reactants = remove_atom_mapping_numbers(reactants)
                 #enable canonicalize option
                 if(canonicalize_option):
                     reactants = canonicalize(reactants)
